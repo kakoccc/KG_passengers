@@ -1,0 +1,41 @@
+name: Build iOS Simulator And Upload To Appetize
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-ios-appetize:
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build iOS simulator app
+        run: flutter build ios --simulator --debug
+
+      - name: Zip iOS simulator app
+        run: |
+          cd build/ios/iphonesimulator
+          zip -r Runner-ios-simulator.zip Runner.app
+
+      - name: Upload to Appetize
+        id: appetize
+        uses: appetizeio/github-action-appetize@v1.0.5
+        with:
+          apiToken: ${{ secrets.APPETIZE_API_TOKEN }}
+          appFile: build/ios/iphonesimulator/Runner-ios-simulator.zip
+          platform: ios
+          fileType: zip
+          note: KG pass iOS simulator build
+
+      - name: Print Appetize link
+        run: echo "https://appetize.io/app/${{ steps.appetize.outputs.publicKey }}"
